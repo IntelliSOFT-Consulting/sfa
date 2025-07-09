@@ -20,7 +20,7 @@ st.sidebar.write("## Setup")
 
 # Step 1 - Get OpenAI API key
 openai_key = os.getenv("OPENAI_API_KEY")
-
+client = OpenAI(api_key=openai_key) if openai_key else None
 
 if not openai_key:
     openai_key = st.sidebar.text_input("Enter OpenAI API key:")
