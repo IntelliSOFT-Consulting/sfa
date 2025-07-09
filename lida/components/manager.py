@@ -1,5 +1,5 @@
 # Visualization manager class that handles the visualization of the data with the following methods
-
+import base64
 # summarize data given a df
 # generate goals given a summary
 # generate generate visualization specifications given a summary and a goal
@@ -20,7 +20,6 @@ from ..components.executor import ChartExecutor
 from ..components.viz import VizGenerator, VizEditor, VizExplainer, VizEvaluator, VizRepairer, VizRecommender
 
 import lida.web as lida
-
 
 logger = logging.getLogger("lida")
 
@@ -48,6 +47,7 @@ class Manager(object):
         self.data = None
         self.infographer = None
         self.persona = PersonaExplorer()
+        self.analyze_visualisation = self.analyze_visualisation
 
     def check_textgen(self, config: TextGenerationConfig):
         """
@@ -62,7 +62,6 @@ class Manager(object):
             return
 
         if self.text_gen.provider != config.provider:
-
             logger.info(
                 "Switching Text Generator Provider from %s to %s",
                 self.text_gen.provider,
@@ -70,12 +69,12 @@ class Manager(object):
             self.text_gen = llm(provider=config.provider)
 
     def summarize(
-        self,
-        data: Union[pd.DataFrame, str],
-        file_name="",
-        n_samples: int = 3,
-        summary_method: str = "default",
-        textgen_config: TextGenerationConfig = TextGenerationConfig(n=1, temperature=0),
+            self,
+            data: Union[pd.DataFrame, str],
+            file_name="",
+            n_samples: int = 3,
+            summary_method: str = "default",
+            textgen_config: TextGenerationConfig = TextGenerationConfig(n=1, temperature=0),
     ) -> Summary:
         """
         Summarize data given a DataFrame or file path.
@@ -133,11 +132,11 @@ class Manager(object):
             summary_method=summary_method, textgen_config=textgen_config)
 
     def goals(
-        self,
-        summary: Summary,
-        textgen_config: TextGenerationConfig = TextGenerationConfig(),
-        n: int = 5,
-        persona: Persona = None
+            self,
+            summary: Summary,
+            textgen_config: TextGenerationConfig = TextGenerationConfig(),
+            n: int = 5,
+            persona: Persona = None
     ) -> List[Goal]:
         """
         Generate goals based on a summary.
@@ -186,12 +185,12 @@ class Manager(object):
                                      textgen_config=textgen_config, n=n)
 
     def visualize(
-        self,
-        summary,
-        goal,
-        textgen_config: TextGenerationConfig = TextGenerationConfig(),
-        library="seaborn",
-        return_error: bool = False,
+            self,
+            summary,
+            goal,
+            textgen_config: TextGenerationConfig = TextGenerationConfig(),
+            library="seaborn",
+            return_error: bool = False,
     ):
         if isinstance(goal, dict):
             goal = Goal(**goal)
@@ -212,12 +211,12 @@ class Manager(object):
         return charts
 
     def execute(
-        self,
-        code_specs,
-        data,
-        summary: Summary,
-        library: str = "seaborn",
-        return_error: bool = False,
+            self,
+            code_specs,
+            data,
+            summary: Summary,
+            library: str = "seaborn",
+            return_error: bool = False,
     ):
 
         if data is None:
@@ -238,13 +237,13 @@ class Manager(object):
         )
 
     def edit(
-        self,
-        code,
-        summary: Summary,
-        instructions: List[str],
-        textgen_config: TextGenerationConfig = TextGenerationConfig(),
-        library: str = "seaborn",
-        return_error: bool = False,
+            self,
+            code,
+            summary: Summary,
+            instructions: List[str],
+            textgen_config: TextGenerationConfig = TextGenerationConfig(),
+            library: str = "seaborn",
+            return_error: bool = False,
     ):
         """Edit a visualization code given a set of instructions
 
@@ -280,14 +279,14 @@ class Manager(object):
         return charts
 
     def repair(
-        self,
-        code,
-        goal: Goal,
-        summary: Summary,
-        feedback,
-        textgen_config: TextGenerationConfig = TextGenerationConfig(),
-        library: str = "seaborn",
-        return_error: bool = False,
+            self,
+            code,
+            goal: Goal,
+            summary: Summary,
+            feedback,
+            textgen_config: TextGenerationConfig = TextGenerationConfig(),
+            library: str = "seaborn",
+            return_error: bool = False,
     ):
         """ Repair a visulization given some feedback"""
         self.check_textgen(config=textgen_config)
@@ -310,10 +309,10 @@ class Manager(object):
         return charts
 
     def explain(
-        self,
-        code,
-        textgen_config: TextGenerationConfig = TextGenerationConfig(),
-        library: str = "seaborn",
+            self,
+            code,
+            textgen_config: TextGenerationConfig = TextGenerationConfig(),
+            library: str = "seaborn",
     ):
         """Explain a visualization code given a set of instructions
 
@@ -333,11 +332,11 @@ class Manager(object):
         )
 
     def evaluate(
-        self,
-        code,
-        goal: Goal,
-        textgen_config: TextGenerationConfig = TextGenerationConfig(),
-        library: str = "seaborn",
+            self,
+            code,
+            goal: Goal,
+            textgen_config: TextGenerationConfig = TextGenerationConfig(),
+            library: str = "seaborn",
     ):
         """Evaluate a visualization code given a goal
 
@@ -360,13 +359,13 @@ class Manager(object):
         )
 
     def recommend(
-        self,
-        code,
-        summary: Summary,
-        n=4,
-        textgen_config: TextGenerationConfig = TextGenerationConfig(),
-        library: str = "seaborn",
-        return_error: bool = False,
+            self,
+            code,
+            summary: Summary,
+            n=4,
+            textgen_config: TextGenerationConfig = TextGenerationConfig(),
+            library: str = "seaborn",
+            return_error: bool = False,
     ):
         """Edit a visualization code given a set of instructions
 
@@ -428,3 +427,26 @@ class Manager(object):
             self.infographer = Infographer()
         return self.infographer.generate(
             visualization=visualization, n=n, style_prompt=style_prompt, return_pil=return_pil)
+
+    def analyze_visualisation(self, image_path, description):
+        with open(image_path, "rb") as img_file:
+            image_bytes = img_file.read()
+
+        messages = [
+            {"role": "system", "content": "You are a data visualization expert. Review the image and description "
+                                          "provided, and write a concise summary of what the visualization shows. "
+                                          "Focus on trends, patterns, and insights that can be inferred."},
+            {"role": "user", "content": [
+                {"type": "image_url",
+                 "image_url": {"url": f"data:image/png;base64,{base64.b64encode(image_bytes).decode()}"},
+                 "name": "chart"},
+                {"type": "text", "text": f"Chart description: {description}"}
+            ]}
+        ]
+
+        response = self.text_gen.generate(
+            messages=messages,
+            config=TextGenerationConfig(n=1, temperature=0.7, max_tokens=512)
+        )
+
+        return response

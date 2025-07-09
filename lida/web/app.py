@@ -50,6 +50,8 @@ api.mount("/files", StaticFiles(directory=files_static_root, html=True), name="f
 
 @api.post("/visualize")
 async def visualize_data(req: VisualizeWebRequest) -> dict:
+    print("Received visualization request with goal: ", req.goal)
+
     """Generate goals given a dataset summary"""
     try:
         # print(req.textgen_config)
@@ -203,6 +205,7 @@ async def generate_text(textgen_config: TextGenerationConfig) -> dict:
 @api.post("/goal")
 async def generate_goal(req: GoalWebRequest) -> dict:
     """Generate goals given a dataset summary"""
+    print("Generating goals for summary: ", req.summary)
     try:
         textgen_config = req.textgen_config if req.textgen_config else TextGenerationConfig()
         goals = lida.goals(req.summary, n=req.n, textgen_config=textgen_config)
@@ -228,6 +231,8 @@ async def generate_goal(req: GoalWebRequest) -> dict:
 async def upload_file(file: UploadFile):
     """ Upload a file and return a summary of the data """
     # allow csv, excel, json
+    print("Received file: ", file.filename, " with type: ", file.content_type)
+
     allowed_types = ["text/csv", "application/vnd.ms-excel", "application/json"]
 
     # print("file: ", file)
@@ -251,6 +256,7 @@ async def upload_file(file: UploadFile):
             file_name=file.filename,
             summary_method="llm",
             textgen_config=textgen_config)
+        print("Completed the summary: ", summary["file_name"])
         return {"status": True, "summary": summary, "data_filename": file.filename}
     except Exception as exception_error:
         logger.error(f"Error processing file: {str(exception_error)}")

@@ -31,6 +31,9 @@ class Summarizer():
         else:
             return value
 
+    def chunk_columns(self, df: pd.DataFrame, chunk_size: int = 10) -> list[pd.DataFrame]:
+        return [df.iloc[:, i:i + chunk_size] for i in range(0, df.shape[1], chunk_size)]
+
     def get_column_properties(self, df: pd.DataFrame, n_samples: int = 3) -> list[dict]:
         """Get properties of each column in a pandas DataFrame"""
         properties_list = []
@@ -93,7 +96,7 @@ class Summarizer():
     def enrich(self, base_summary: dict, text_gen: TextGenerator,
                textgen_config: TextGenerationConfig) -> dict:
         """Enrich the data summary with descriptions"""
-        logger.info(f"Enriching the data summary with descriptions")
+        print(f"Enriching the data summary with descriptions")
 
         messages = [
             {"role": "system", "content": system_prompt},
@@ -109,7 +112,9 @@ class Summarizer():
             json_string = clean_code_snippet(response.text[0]["content"])
             enriched_summary = json.loads(json_string)
         except json.decoder.JSONDecodeError:
-            error_msg = f"The model did not return a valid JSON object while attempting to generate an enriched data summary. Consider using a default summary or  a larger model with higher max token length. | {response.text[0]['content']}"
+            error_msg = (f"The model did not return a valid JSON object while attempting to generate an enriched data "
+                         f"summary. Consider using a default summary or  a larger model with higher max tok"
+                         f"en length. | {response.text[0]['content']}")
             logger.info(error_msg)
             print(response.text[0]["content"])
             raise ValueError(error_msg + "" + response.usage)
@@ -129,6 +134,9 @@ class Summarizer():
             data = read_dataframe(data, encoding=encoding)
         data_properties = self.get_column_properties(data, n_samples)
 
+        # Log the summary process
+        print(f"Summarizing data from {file_name} with method {summary_method}")
+
         # default single stage summary construction
         base_summary = {
             "name": file_name,
@@ -141,10 +149,26 @@ class Summarizer():
 
         if summary_method == "llm":
             # two stage summarization with llm enrichment
-            data_summary = self.enrich(
-                base_summary,
-                text_gen=text_gen,
-                textgen_config=textgen_config)
+            enriched_fields = []
+            for chunk_df in self.chunk_columns(df=data, chunk_size=10):
+                chunk_properties = self.get_column_properties(chunk_df, n_samples)
+                chunk_summary = {
+                    "name": file_name,
+                    "file_name": file_name,
+                    "dataset_description": "",
+                    "fields": chunk_properties
+                }
+                enriched_chunk = self.enrich(chunk_summary, text_gen=text_gen, textgen_config=textgen_config)
+                enriched_fields.extend(enriched_chunk["fields"])
+
+                data_summary = {
+                    "name": file_name,
+                    "file_name": file_name,
+                    "dataset_description": "Merged from chunks",
+                    "fields": enriched_fields,
+                    "field_names": data.columns.tolist()
+                }
+
         elif summary_method == "columns":
             # no enrichment, only column names
             data_summary = {
