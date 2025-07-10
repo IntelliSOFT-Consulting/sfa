@@ -66,6 +66,7 @@ if openai_key:
     datasets = [
         {"label": "Select a dataset", "url": None},
         {"label": "Stocks", "url": "data/stocks.csv"},
+        {"label": "Stocks", "url": "data/risk_factors_cervical_cancer.csv"},
     ]
 
     selected_dataset_label = st.sidebar.selectbox(
