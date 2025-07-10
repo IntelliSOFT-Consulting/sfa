@@ -1,6 +1,6 @@
 import streamlit as st
 from openai import OpenAI
-
+from dotenv import load_dotenv
 from lida import Manager, TextGenerationConfig, llm
 from lida.datamodel import Goal
 import os
@@ -19,6 +19,7 @@ st.write("# Using LLMs to better understand structured cancer data 📊")
 st.sidebar.write("## Setup")
 
 # Step 1 - Get OpenAI API key
+load_dotenv()  # Load environment variables from .env file
 openai_key = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=openai_key) if openai_key else None
 
