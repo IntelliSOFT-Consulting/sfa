@@ -53,7 +53,7 @@ fqdn==1.5.1
 frontend==0.0.3
 fsspec==2025.5.1
 future==0.18.2
-gevent
+gevent>=24.10.0
 google==3.0.0
 google-api-core==2.25.1
 google-api-python-client==2.172.0
