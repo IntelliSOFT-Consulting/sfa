@@ -165,7 +165,7 @@ python-json-logger==2.0.7
 python-multipart==0.0.20
 pytz==2020.4
 pyxnat==1.6.3
-PyYAML==6.0
+PyYAML
 pyzmq==26.0.3
 rdflib==7.1.4
 referencing==0.35.1
