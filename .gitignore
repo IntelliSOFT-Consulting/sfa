@@ -1,0 +1,21 @@
+.env
+users.db
+# Flask stuff:
+instance/
+# PyCharm
+.idea/
+# VS Code
+.vscode/
+# Jupyter Notebook
+.ipynb_checkpoints
+# mypy
+.mypy_cache/
+# Pytest
+.pytest_cache/
+# Coverage
+.coverage
+lib/
+.DS_Store
+__pycache__/
+*.py[cod]
+*$py.class
