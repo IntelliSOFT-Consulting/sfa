@@ -12,6 +12,7 @@ import logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
+
 class QueryRequest(BaseModel):
     question: str
 
@@ -23,6 +24,7 @@ class ScreeningHistory(BaseModel):
     hpv_test_result: Optional[str]
     pap_smear_result: Optional[str]
 
+
 class ClinicalFindings(BaseModel):
     presenting_symptoms: List[str]
     lesion_visible: bool
@@ -30,14 +32,15 @@ class ClinicalFindings(BaseModel):
     cancer_stage: Optional[str]
     imaging_findings: Optional[str]
 
+
 class PriorTreatment(BaseModel):
     cryotherapy: bool
     LEEP: bool
     radiation: bool
     chemotherapy: bool
 
+
 class ClinicalRequest(BaseModel):
-    patient_id: str
     patient_age: int
     parity: Optional[int]
     menopausal_status: Optional[str]
@@ -53,7 +56,6 @@ class ClinicalRequest(BaseModel):
 
 
 def query_pipeline(user_question, api_token, prompt_file_path):
-    
     """
     End-to-end pipeline for querying a vector database and generating a response using an LLM.
     Args:
@@ -63,36 +65,34 @@ def query_pipeline(user_question, api_token, prompt_file_path):
     Returns:
         str: The generated response from the language model.
     """
-    
+
     custom_prompt = load_custom_prompt(prompt_file_path)
-    
+
     embedding_model = EmbeddingModel()
     index_name = "oncology-index"
     index = create_pinecone_index(index_name)
     retriever = RetrievalModel(index, embedding_model)
 
-    
     llm = LLMModel(model_name="gpt-4", token=api_token)
-    
+
     docs = retriever.get_relevant_documents(user_question)
-    
+
     context = "\n\n".join([doc["content"] for doc in docs])
-    prompt = custom_prompt.replace("{input}", user_question)\
-                          .replace("{context}", context)
+    prompt = custom_prompt.replace("{input}", user_question) \
+        .replace("{context}", context)
 
     # Print the prompt for debugging
     logger.info(f'Model prompt: {prompt}')
-    
+
     response = llm.generate_response(prompt)
-    
+
     logger.info('Response generation complete')
-    
+
     return response
 
 
 def format_clinical_data(clinical_data: ClinicalRequest) -> str:
     out = [
-        f"Patient ID: {clinical_data.patient_id}",
         f"Patient Age: {clinical_data.patient_age}",
         f"Parity: {clinical_data.parity}",
         f"Menopausal Status: {clinical_data.menopausal_status}",
@@ -145,7 +145,6 @@ def format_clinical_data(clinical_data: ClinicalRequest) -> str:
     return "\n".join(out)
 
 
-
 def query_clinical_decision_making(clinical_payload: ClinicalRequest, api_token):
     """
     Query function tailored for clinical decision-making.
@@ -158,7 +157,8 @@ def query_clinical_decision_making(clinical_payload: ClinicalRequest, api_token)
     prompt_file_path = "data/prompts/clinical_prompt.txt"
     clinical_data = format_clinical_data(clinical_payload)
 
-    return query_pipeline(clinical_data, api_token,prompt_file_path)
+    return query_pipeline(clinical_data, api_token, prompt_file_path)
+
 
 def query_public_health_monitoring(user_question, api_token):
     """
@@ -173,6 +173,7 @@ def query_public_health_monitoring(user_question, api_token):
 
     return query_pipeline(user_question, api_token, prompt_file_path)
 
+
 def query_research(user_question, api_token):
     """
     Query function tailored for research purposes.
@@ -183,6 +184,5 @@ def query_research(user_question, api_token):
         str: The generated response from the language model.
     """
     prompt_file_path = "data/prompts/use_cases_prompt.txt"
-
 
     return query_pipeline(user_question, api_token, prompt_file_path)
