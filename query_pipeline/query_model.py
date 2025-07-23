@@ -20,7 +20,7 @@ class QueryRequest(BaseModel):
 class ScreeningHistory(BaseModel):
     last_screening_type: str
     last_screening_result: str
-    date_of_last_screening: Optional[date]
+    date_of_last_screening: Optional[str]
     hpv_test_result: Optional[str]
     pap_smear_result: Optional[str]
 
