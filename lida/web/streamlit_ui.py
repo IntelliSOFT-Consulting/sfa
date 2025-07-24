@@ -75,7 +75,7 @@ if openai_key:
         upload_own_data = st.checkbox("Upload your own data")
 
         if upload_own_data:
-            uploaded_file = st.sidebar.file_uploader("Choose a CSV or JSON file", type=["csv", "json"])
+            uploaded_file = st.file_uploader("Choose a CSV or JSON file", type=["csv", "json"])
 
             if uploaded_file is not None:
                 # Get the original file name and extension
@@ -92,7 +92,7 @@ if openai_key:
                 data.to_csv(uploaded_file_path, index=False)
 
                 selected_dataset = uploaded_file_path
-            datasets.append({"label": file_name, "url": uploaded_file_path})
+                datasets.append({"label": file_name, "url": uploaded_file_path})
 
             # st.sidebar.write("Uploaded file path: ", uploaded_file_path)
         else:
