@@ -1,4 +1,5 @@
 import streamlit as st
+import lida
 from openai import OpenAI
 from dotenv import load_dotenv
 from lida import Manager, TextGenerationConfig, llm
@@ -12,7 +13,16 @@ os.makedirs("data", exist_ok=True)
 st.set_page_config(
     page_title="Cancer Registry Visualization",
     page_icon="📊",
+    layout="wide",
 )
+
+hide_default_format = """
+       <style>
+       #MainMenu {visibility: hidden; }
+       footer {visibility: hidden;}
+       </style>
+       """
+st.markdown(hide_default_format, unsafe_allow_html=True)
 
 st.write("# Using LLMs to better understand structured cancer data 📊")
 
@@ -38,188 +48,123 @@ else:
 if openai_key:
     # Initialize selected_dataset to None
     selected_dataset = None
-
     # select model from gpt-4 , gpt-3.5-turbo, gpt-3.5-turbo-16k
-    st.sidebar.write("## Text Generation Model")
-    models = ["gpt-4", "gpt-3.5-turbo", "gpt-3.5-turbo-16k"]
-    selected_model = st.sidebar.selectbox(
-        'Choose a model',
-        options=models,
-        index=0
-    )
-
-
+    # st.sidebar.write("## Text Generation Model")
+    # models = ["gpt-4", "gpt-3.5-turbo", "gpt-3.5-turbo-16k"]
+    selected_model = "gpt-4"
     # select temperature on a scale of 0.0 to 1.0
     # st.sidebar.write("## Text Generation Temperature")
-    temperature = st.sidebar.slider(
-        "Temperature",
-        min_value=0.0,
-        max_value=1.0,
-        value=0.0)
-
+    temperature = 0.5
     # set use_cache in sidebar
-    use_cache = st.sidebar.checkbox("Use cache", value=True)
+    use_cache = True
 
-    # Handle dataset selection and upload
-    st.sidebar.write("## Data Summarization")
-    st.sidebar.write("### Choose a dataset")
+    left, right = st.columns(2)
+    with left:
+        # Handle dataset selection and upload
+        st.write("## Choose a dataset")
 
-    datasets = [
-        {"label": "Select a dataset", "url": None},
-        {"label": "Stocks", "url": os.path.join("data", "stocks.csv")},
-        {"label": "Cervical Cancer Risk Factors", "url": os.path.join("data", "risk_factors_cervical_cancer.csv")},
-    ]
+        datasets = [
+            {"label": "Select a dataset", "url": None},
+            {"label": "Stocks", "url": os.path.join("data", "stocks.csv")},
+            {"label": "Cervical Cancer Risk Factors", "url": os.path.join("data", "risk_factors_cervical_cancer.csv")},
+        ]
 
-    selected_dataset_label = st.sidebar.selectbox(
-        'Choose a dataset',
-        options=[dataset["label"] for dataset in datasets],
-        index=0
-    )
+        selected_dataset_label = st.selectbox('Choose a dataset', options=[dataset["label"] for dataset in datasets],
+                                              index=0)
 
-    upload_own_data = st.sidebar.checkbox("Upload your own data")
+        upload_own_data = st.checkbox("Upload your own data")
 
-    if upload_own_data:
-        uploaded_file = st.sidebar.file_uploader("Choose a CSV or JSON file", type=["csv", "json"])
+        if upload_own_data:
+            uploaded_file = st.sidebar.file_uploader("Choose a CSV or JSON file", type=["csv", "json"])
 
-        if uploaded_file is not None:
-            # Get the original file name and extension
-            file_name, file_extension = os.path.splitext(uploaded_file.name)
+            if uploaded_file is not None:
+                # Get the original file name and extension
+                file_name, file_extension = os.path.splitext(uploaded_file.name)
 
-            # Load the data depending on the file type
-            if file_extension.lower() == ".csv":
-                data = pd.read_csv(uploaded_file)
-            elif file_extension.lower() == ".json":
-                data = pd.read_json(uploaded_file)
+                # Load the data depending on the file type
+                if file_extension.lower() == ".csv":
+                    data = pd.read_csv(uploaded_file)
+                elif file_extension.lower() == ".json":
+                    data = pd.read_json(uploaded_file)
 
-            # Save the data using the original file name in the data dir
-            uploaded_file_path = os.path.join("data", uploaded_file.name)
-            data.to_csv(uploaded_file_path, index=False)
+                # Save the data using the original file name in the data dir
+                uploaded_file_path = os.path.join("data", uploaded_file.name)
+                data.to_csv(uploaded_file_path, index=False)
 
-            selected_dataset = uploaded_file_path
-
+                selected_dataset = uploaded_file_path
             datasets.append({"label": file_name, "url": uploaded_file_path})
 
             # st.sidebar.write("Uploaded file path: ", uploaded_file_path)
-    else:
-        selected_dataset = datasets[[dataset["label"]
-                                     for dataset in datasets].index(selected_dataset_label)]["url"]
+        else:
+            selected_dataset = datasets[[dataset["label"] for dataset in datasets].index(selected_dataset_label)]["url"]
 
-    if not selected_dataset:
-        st.info("To continue, select a dataset from the sidebar on the left or upload your own.")
+        if not selected_dataset:
+            st.info("To continue, select one of our pre-loaded datasets or upload your own.")
 
-    st.sidebar.write("### Choose a summarization method")
-    # summarization_methods = ["default", "llm", "columns"]
-    summarization_methods = [
-        {"label": "llm",
-         "description":
-             "Uses the LLM to generate annotate the default summary, adding details such as semantic types for columns and dataset description"},
-        {"label": "default",
-         "description": "Uses dataset column statistics and column names as the summary"},
+    with right:
+        selected_method = "llm"  # Default method
+        # Step 3 - Generate data summary
+        lida = Manager(text_gen=llm("openai", api_key=openai_key))
+        textgen_config = TextGenerationConfig(n=1, temperature=temperature, model=selected_model,
+                                              use_cache=use_cache)
+        st.write("## Dataset description")
+        # **** lida.summarize *****
 
-        {"label": "columns", "description": "Uses the dataset column names as the summary"}]
+        summary = None
+        df_fields = pd.DataFrame()
+        if openai_key and selected_dataset and selected_method:
+            summary = lida.summarize(selected_dataset, summary_method=selected_method, textgen_config=textgen_config)
+            if "dataset_description" in summary:
+                st.write(summary["dataset_description"])
+            if "fields" in summary:
+                df_fields = pd.DataFrame(
+                    [{"column": f["column"], **{k: str(v) for k, v in f["properties"].items() if k != "samples"}}
+                        for f in summary["fields"]])
 
-    # selected_method = st.sidebar.selectbox("Choose a method", options=summarization_methods)
-    selected_method_label = st.sidebar.selectbox(
-        'Choose a method',
-        options=[method["label"] for method in summarization_methods],
-        index=0
-    )
-
-    selected_method = summarization_methods[[
-        method["label"] for method in summarization_methods].index(selected_method_label)]["label"]
-
-    # add description of selected method in very small font to sidebar
-    selected_summary_method_description = summarization_methods[[
-        method["label"] for method in summarization_methods].index(selected_method_label)]["description"]
-
-    if selected_method:
-        st.sidebar.markdown(
-            f"<span> {selected_summary_method_description} </span>",
-            unsafe_allow_html=True)
-
-# Step 3 - Generate data summary
-if openai_key and selected_dataset and selected_method:
-    lida = Manager(text_gen=llm("openai", api_key=openai_key))
-    textgen_config = TextGenerationConfig(
-        n=1,
-        temperature=temperature,
-        model=selected_model,
-        use_cache=use_cache)
-
-    st.write("## Summary")
-    # **** lida.summarize *****
-    summary = lida.summarize(
-        selected_dataset,
-        summary_method=selected_method,
-        textgen_config=textgen_config)
-
-    if "dataset_description" in summary:
-        st.write(summary["dataset_description"])
-
-    if "fields" in summary:
-        fields = summary["fields"]
-        nfields = []
-        for field in fields:
-            flatted_fields = {}
-            flatted_fields["column"] = field["column"]
-            # flatted_fields["dtype"] = field["dtype"]
-            for row in field["properties"].keys():
-                if row != "samples":
-                    flatted_fields[row] = field["properties"][row]
-                else:
-                    flatted_fields[row] = str(field["properties"][row])
-            # flatted_fields = {**flatted_fields, **field["properties"]}
-            nfields.append(flatted_fields)
-        nfields_df = pd.DataFrame(nfields)
-        st.write(nfields_df)
-    else:
-        st.write(str(summary))
+    if df_fields is not None and not df_fields.empty:
+        st.dataframe(df_fields)
 
     # Step 4 - Generate goals
-    if summary:
-        st.sidebar.write("### Goal Selection")
+    if summary is not None:
 
-        num_goals = st.sidebar.slider(
-            "Number of goals to generate",
+        # **** lida.goals *****
+
+        st.write("### Analysis Areas")
+
+        num_goals = st.slider(
+            "How many analysis areas would you like to generate?You can also add your own analysis objective.",
             min_value=1,
             max_value=10,
             value=4)
-        own_goal = st.sidebar.checkbox("Add Your Own Goal")
+        own_goal = st.checkbox("Add Your Own Goal")
 
-        # **** lida.goals *****
         goals = lida.goals(summary, n=num_goals, textgen_config=textgen_config,
-                           persona="A clinical data scientist interested in deeply understanding cancer data to improve patient outcomes.")
-        st.write(f"## Goals ({len(goals)})")
+                           persona="A clinical data scientist interested in deeply understanding cancer data to improve patient outcomes. I want all things to come back to cervical cancer.")
 
         default_goal = goals[0].question
         goal_questions = [goal.question for goal in goals]
 
         if own_goal:
-            user_goal = st.sidebar.text_input("Describe Your Goal")
+            user_goal = st.text_input("Describe Your Goal")
 
             if user_goal:
                 new_goal = Goal(question=user_goal, visualization=user_goal, rationale="")
                 goals.append(new_goal)
                 goal_questions.append(new_goal.question)
 
-        selected_goal = st.selectbox('Choose a generated goal', options=goal_questions, index=0)
-
-        # st.markdown("### Selected Goal")
+        selected_goal = st.selectbox('Choose an analysis to conduct', options=goal_questions, index=0)
         selected_goal_index = goal_questions.index(selected_goal)
-        st.write(goals[selected_goal_index])
-
         selected_goal_object = goals[selected_goal_index]
+
+        st.markdown(f"**Goal Selected**: {selected_goal_object.question}")
+        st.markdown(f"**Rationale**: {selected_goal_object.rationale}")
 
         # Step 5 - Generate visualizations
         if selected_goal_object:
-            st.sidebar.write("## Visualization Library")
+            # st.sidebar.write("## Visualization Library")
             visualization_libraries = ["seaborn", "matplotlib", "plotly"]
 
-            selected_library = st.sidebar.selectbox(
-                'Choose a visualization library',
-                options=visualization_libraries,
-                index=0
-            )
+            selected_library = "seaborn"
 
             # Update the visualization generation call to use the selected library.
             st.write("## Visualizations")
@@ -244,8 +189,8 @@ if openai_key and selected_dataset and selected_method:
                 st.image(img, caption=selected_goal_object.visualization + ". " + selected_goal_object.rationale,
                          use_column_width=True)
 
-            st.write("### Visualization Code")
-            st.code(selected_viz.code)
+            # st.write("### Visualization Code")
+            # st.code(selected_viz.code)
 
             # *** lida.explain ***
 
@@ -273,10 +218,12 @@ if openai_key and selected_dataset and selected_method:
                 {"role": "user", "content": [
                     {"type": "image_url",
                      "image_url": {"url": f"data:image/png;base64,{base64.b64encode(image_bytes).decode()}"}},
-                    {"type": "text", "text": f"Chart description: {selected_goal_object.visualization + selected_goal_object.rationale}"}
+                    {"type": "text",
+                     "text": f"Chart description: {selected_goal_object.visualization + selected_goal_object.rationale}"}
                 ]}
             ]
 
-            response = client.chat.completions.create(model="gpt-4o",messages=messages,temperature=0.3,max_tokens=300)
+            response = client.chat.completions.create(model="gpt-4o", messages=messages, temperature=0.3,
+                                                      max_tokens=300)
 
             st.write(response.choices[0].message.content)
