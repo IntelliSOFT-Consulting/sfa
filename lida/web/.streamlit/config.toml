@@ -5,8 +5,10 @@ enableXsrfProtection = false
 port = 8502
 address = "0.0.0.0"
 [theme] #
-primaryColor = '#FF8C02' # Bright Orange
-backgroundColor = '#00325B' # Dark Blue
-secondaryBackgroundColor = '#55B2FF' # Lighter Blue
+primaryColor = "#FF8C02"       # Bright Orange
+backgroundColor = "#00325B"    # Dark Blue
+secondaryBackgroundColor = "#0E1117"
+textColor = "#FFFFFF"
+font = "sans serif"
 [browser]
 gatherUsageStats = true
