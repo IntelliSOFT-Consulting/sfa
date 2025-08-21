@@ -121,19 +121,19 @@ class HPVTesting(BaseModel):
     sample_date: Optional[str] = ""
     self_sampling: Optional[str] = ""
     result: Optional[str] = ""
-    action: Optional[List[str]] = ""  # e.g., follow_up, referred, hpv_follow_up_1yr, routine_screen_3to5yrs
+    action: Optional[str] = ""  # e.g., follow_up, referred, hpv_follow_up_1yr, routine_screen_3to5yrs
 
 
 class VIATesting(BaseModel):
     done: Optional[str] = ""
     result: Optional[str] = ""
-    action: Optional[List[str]] = ""
+    action: Optional[str] = ""
 
 
 class PapSmear(BaseModel):
     done: Optional[str] = ""
     result: Optional[str] = ""
-    action: Optional[List[str]] = ""
+    action: Optional[str] = ""
 
 
 class TxBlock(BaseModel):
