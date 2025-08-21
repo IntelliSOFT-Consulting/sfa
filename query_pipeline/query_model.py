@@ -17,83 +17,91 @@ logging.basicConfig(level=logging.INFO)
 class QueryRequest(BaseModel):
     question: str
 class Meta(BaseModel):
-    submitted_at: Optional[str] = None  # ISO-8601
-    source_app_version: Optional[str] = None
+    submitted_at: Optional[str] = ""  # ISO-8601
+    source_app_version: Optional[str] = ""
 
 
 class ClientFacility(BaseModel):
-    date: Optional[date] = None
-    county: Optional[str] = None
-    sub_county: Optional[str] = None
-    facility_name: Optional[str] = None
-    service_provider_name: Optional[str] = None
+    """
+    Represents the facility where the client was seen or an empty placeholder if not applicable.
+    Examples:
+        - date: "2023-10-01"
+          county: "Nairobi"
+          sub_county: "Westlands"
+          facility_name: "City Hospital"
+          service_provider_name: "Dr. Jane Doe"
+        - date: ""
+          county: ""
+          sub_county: ""
+          facility_name: ""
+          service_provider_name: ""
+    """
+    date: Optional[str] = ""
+    county: Optional[str] = ""
+    sub_county: Optional[str] = ""
+    facility_name: Optional[str] = ""
+    service_provider_name: Optional[str] = ""
 
 
 class Residence(BaseModel):
-    county: Optional[str] = None
-    sub_county: Optional[str] = None
-    ward: Optional[str] = None
+    county: Optional[str] = ""
+    sub_county: Optional[str] = ""
+    ward: Optional[str] = ""
 
 
 class ClientIdentification(BaseModel):
-    patient_id: Optional[str] = None
-    full_name: Optional[str] = None
-    age_years: Optional[int] = None
-    phone_number: Optional[str] = None
-    residence: Optional[Residence] = None
-
-
-YNUNK = Literal["yes", "no", "unknown"]
+    patient_id: Optional[str] = ""
+    full_name: Optional[str] = ""
+    age_years: Optional[int] = ""
+    phone_number: Optional[str] = ""
+    residence: Optional[Residence] = ""
 
 class FamilyHistory(BaseModel):
-    breast_cancer: Optional[YNUNK] = "unknown"
-    hypertension: Optional[YNUNK] = "unknown"
-    diabetes: Optional[YNUNK] = "unknown"
-    mental_health_disorders: Optional[YNUNK] = "unknown"
-    notes: Optional[str] = None
+    breast_cancer: Optional[str] = ""
+    hypertension: Optional[str] = ""
+    diabetes: Optional[str] = ""
+    mental_health_disorders: Optional[str] = ""
+    notes: Optional[str] = ""
 
 
 class DxTx(BaseModel):
-    diagnosed: Optional[YNUNK] = "unknown"
-    on_treatment: Optional[YNUNK] = "unknown"
+    diagnosed: Optional[str] = ""
+    on_treatment: Optional[str] = ""
 
 
 class PersonalHistory(BaseModel):
-    hypertension: Optional[DxTx] = None
-    diabetes: Optional[DxTx] = None
+    hypertension: Optional[DxTx] = ""
+    diabetes: Optional[DxTx] = ""
 
 
 class NcdRiskFactors(BaseModel):
-    smoking: Optional[YNUNK] = "unknown"
-    alcohol: Optional[YNUNK] = "unknown"
+    smoking: Optional[str] = ""
+    alcohol: Optional[str] = ""
 
-
-Menopause = Literal["pre-menopausal", "post-menopausal", "unknown"]
 
 class Contraception(BaseModel):
-    uses_contraception: Optional[YNUNK] = "unknown"
-    method: Optional[str] = None
-
+    uses_contraception: Optional[str] = ""
+    method: Optional[str] = ""
 
 class ReproductiveHealth(BaseModel):
-    gravida: Optional[int] = None
-    parity: Optional[int] = None
-    age_at_first_sex: Optional[int] = None
-    contraception: Optional[Contraception] = None
-    number_of_sex_partners: Optional[int] = None
-    menopausal_status: Optional[Menopause] = "unknown"
+    gravida: Optional[str] = ""
+    parity: Optional[int] = 0
+    age_at_first_sex: Optional[str] = ""
+    contraception: Optional[Contraception] = ""
+    number_of_sex_partners: Optional[str] = ""
+    menopausal_status: Optional[str] = ""
 
 
 class BPReading(BaseModel):
-    systolic: Optional[float] = None
-    diastolic: Optional[float] = None
+    systolic: Optional[float] = 120
+    diastolic: Optional[float] = 80
 
 
 class Measurements(BaseModel):
-    weight_kg: Optional[float] = None
-    height_cm: Optional[float] = None
-    bmi: Optional[float] = None
-    waist_circumference_cm: Optional[float] = None
+    weight_kg: Optional[float] = 70
+    height_cm: Optional[float] = 168
+    bmi: Optional[float] = 22.5
+    waist_circumference_cm: Optional[float] = 30
     bp: Optional[dict] = Field(
         default_factory=lambda: {
             "reading_1": BPReading().dict(),
@@ -101,98 +109,81 @@ class Measurements(BaseModel):
         }
     )
 
-
-HivStatus = Literal["positive", "negative", "unknown"]
-Adherence = Literal["good", "fair", "poor", "unknown"]
-
 class HIV(BaseModel):
-    status: Optional[HivStatus] = "unknown"
-    on_art: Optional[YNUNK] = "unknown"
-    art_start_date: Optional[date] = None
-    adherence: Optional[Adherence] = "unknown"
+    status: Optional[str] = ""
+    on_art: Optional[str] = ""
+    art_start_date: Optional[str] = ""
+    adherence: Optional[str] = ""
 
-
-DoneNA = Literal["done", "not_done", "not_applicable"]
-PosNegSusUnk = Literal["positive", "negative", "suspected_cancer", "unknown"]
 
 class HPVTesting(BaseModel):
-    done: Optional[DoneNA] = "not_applicable"
-    sample_date: Optional[date] = None
-    self_sampling: Optional[YNUNK] = "unknown"
-    result: Optional[PosNegSusUnk] = "unknown"
-    action: Optional[List[str]] = None  # e.g., follow_up, referred, hpv_follow_up_1yr, routine_screen_3to5yrs
+    done: Optional[str] = ""
+    sample_date: Optional[str] = ""
+    self_sampling: Optional[str] = ""
+    result: Optional[str] = ""
+    action: Optional[List[str]] = ""  # e.g., follow_up, referred, hpv_follow_up_1yr, routine_screen_3to5yrs
 
 
 class VIATesting(BaseModel):
-    done: Optional[DoneNA] = "not_applicable"
-    result: Optional[PosNegSusUnk] = "unknown"
-    action: Optional[List[str]] = None
+    done: Optional[str] = ""
+    result: Optional[str] = ""
+    action: Optional[List[str]] = ""
 
 
 class PapSmear(BaseModel):
-    done: Optional[DoneNA] = "not_applicable"
-    result: Optional[Literal["positive", "negative", "unknown"]] = "unknown"
-    action: Optional[List[str]] = None
+    done: Optional[str] = ""
+    result: Optional[str] = ""
+    action: Optional[List[str]] = ""
 
 
 class TxBlock(BaseModel):
-    status: Optional[DoneNA] = "not_applicable"
-    single_visit_approach: Optional[YNUNK] = "unknown"
-    if_not_done: Optional[Literal["referred", "postponed", None]] = None
-    postponed_reason: Optional[str] = None
-
-
-VisitType = Literal["hpv", "via", "pap", "mixed", "unknown"]
+    status: Optional[str] = ""
+    single_visit_approach: Optional[str] = ""
+    if_not_done: Optional[str] = ""
+    postponed_reason: Optional[str] = ""
 
 class PreCancerTreatment(BaseModel):
-    cryotherapy: Optional[TxBlock] = None
-    thermal_ablation: Optional[TxBlock] = None
-    leep: Optional[TxBlock] = None
+    cryotherapy: Optional[TxBlock] = ""
+    thermal_ablation: Optional[TxBlock] = ""
+    leep: Optional[TxBlock] = ""
 
 
 class CervicalScreening(BaseModel):
-    type_of_visit: Optional[VisitType] = "unknown"
-    hpv_testing: Optional[HPVTesting] = None
-    via_testing: Optional[VIATesting] = None
-    pap_smear: Optional[PapSmear] = None
-    pre_cancer_treatment: Optional[PreCancerTreatment] = None
+    type_of_visit: Optional[str] = ""
+    hpv_testing: Optional[HPVTesting] = ""
+    via_testing: Optional[VIATesting] = ""
+    pap_smear: Optional[PapSmear] = ""
+    pre_cancer_treatment: Optional[PreCancerTreatment] = ""
 
 
 class BreastModality(BaseModel):
-    done: Optional[Literal["yes", "no", "not_applicable"]] = "not_applicable"
-    birads: Optional[Literal["0","1","2","3","4","5","6","7","8", None]] = None
-
-
-class BreastAction(BaseModel):
-    referred: Optional[str] = None
-    follow_up: Optional[str] = None
-
-
+    done: Optional[str] = ""
+    birads: Optional[str] = ""
 class BreastScreening(BaseModel):
-    cbe: Optional[Literal["normal", "abnormal", "not_applicable", "not_done"]] = "not_applicable"
-    ultrasound: Optional[BreastModality] = None
-    mammography: Optional[BreastModality] = None
-    action: Optional[BreastAction] = None
-
+    cbe: Optional[str] = ""
+    ultrasound: Optional[BreastModality] = ""
+    mammography: Optional[BreastModality] = ""
+    action: Optional[str] = ""
 
 class ClinicalFindings(BaseModel):
-    presenting_symptoms: Optional[List[str]] = None
-    lesion_visible: Optional[bool] = None
-    lesion_description: Optional[str] = None
-    cancer_stage: Optional[str] = None
+    presenting_symptoms: Optional[List[str]] = ""
+    lesion_visible: Optional[bool] = ""
+    lesion_description: Optional[str] = ""
+    cancer_stage: Optional[str] = ""
+    imaging_findings: Optional[str] = ""
 
 
 class MedsAllergies(BaseModel):
-    comorbidities: Optional[List[str]] = None
-    current_medications: Optional[List[str]] = None
-    allergies: Optional[List[str]] = None
+    comorbidities: Optional[List[str]] = ""
+    current_medications: Optional[List[str]] = ""
+    allergies: Optional[List[str]] = ""
 
 
 class PriorTreatment(BaseModel):
-    cryotherapy: Optional[bool] = None
-    leep: Optional[bool] = None
-    radiation: Optional[bool] = None
-    chemotherapy: Optional[bool] = None
+    cryotherapy: Optional[bool] = False
+    leep: Optional[bool] = False
+    radiation: Optional[bool] = False
+    chemotherapy: Optional[bool] = False
 
 
 class LlmRequest(BaseModel):
@@ -441,8 +432,7 @@ def format_clinical_data(payload: ClinicalRequest) -> str:
             ]
         if bs.action:
             lines += [
-                _line("Breast referral", bs.action.referred),
-                _line("Breast follow-up", bs.action.follow_up),
+                _line("Breast action", bs.action),
             ]
         sections.append(_block("Breast Screening", lines))
 
@@ -454,7 +444,8 @@ def format_clinical_data(payload: ClinicalRequest) -> str:
                 _line("Presenting symptoms", cfnd.presenting_symptoms or []),
                 _line("Lesion visible", cfnd.lesion_visible),
                 _line("Lesion description", cfnd.lesion_description),
-                _line("Cancer stage", cfnd.cancer_stage)
+                _line("Cancer stage", cfnd.cancer_stage),
+                _line("Imaging findings", cfnd.imaging_findings),
             ]
         ))
 
